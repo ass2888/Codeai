@@ -3,8 +3,8 @@ import fetch from 'node-fetch';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import path from 'path';
-import { fileURLToPath } from 'url'; // <== يجب إضافة هذا
-import { dirname } from 'path';      // <== يجب إضافة هذا
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';      
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
