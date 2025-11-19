@@ -67,7 +67,7 @@ app.post('/api/chat', async (req, res) => {
 
     // نداء واجهة برمجة تطبيقات Gemini للبث (Streaming)
     const resp = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:streamGenerateContent?key='
-  + GEMINI_KEY;
+  + GEMINI_KEY, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
