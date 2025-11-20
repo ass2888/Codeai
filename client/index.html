@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<link rel="manifest" href="/manifest.json" />
+<title>Codeai</title>
+<style>
+/* --- CSS Variables --- */
+:root {
+  --bg-primary: #080808;      
+  --bg-header: #141414;       
+  --bg-secondary: #2A2A2A;    
+  --text-color: #FFFFFF;      
+  --accent-color: #333333;
+  --border-color: rgba(255,255,255,0.1);
+  /* Task 5: AI Background Removed (Transparent) */
+  --msg-ai-bg: transparent; 
+}
+
+[data-theme="light"] {
+  --bg-primary: #FFFFFF;
+  --bg-header: #F0F0F0;
+  --bg-secondary: #E0E0E0;
+  --text-color: #080808;
+  --accent-color: #CCCCCC;
+  --msg-ai-bg: transparent;
+  --border-color: rgba(0,0,0,0.1);
+}
+
+html, body {
+  height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-color);
+  transition: background 0.3s, color 0.3s;
+}
+
+/* --- Top Bar --- */
+.topbar {
+  height: 56px; display: flex; align-items: center; justify-content: center;
+  padding: 8px 12px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+  position: relative; z-index: 100;
+}
+
+.logo-container {
+    display: flex; align-items: center; font-weight: bold; font-size: 18px;
+    opacity: 0; transition: opacity 0.3s;
+}
+.logo-symbol {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 28px; font-weight: 900; margin-right: 1px; margin-top: -4px; line-height: 1;
+}
+
+/* --- TASK 4: Fixed Z-Index for Menu Button --- */
+/* Lowered Z-index so overlays can cover it */
+.menu-btn {
+  position: fixed; top: 8px; left: 12px;
+  width: 44px; height: 44px; border-radius: 10px; border: none;
+  background: var(--bg-secondary); color: var(--text-color);
+  font-size: 20px; cursor: pointer;
+  z-index: 3200; /* Lower than Overlays (2000+) */
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.menu-btn.active { transform: rotate(-180deg); background: var(--accent-color); }
+
+/* --- Main Layout --- */
+.root {
+  position: fixed; left: 0; top: 56px; right: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  /* هذا هو السطر السحري الذي سيظهر الصندوق */
+  z-index: 60; /* قيمة أعلى من welcomeScreen الذي يمتلك 50 */
+  
+  /* اختياري: يسمح بالضغط على عناصر الترحيب في المساحات الفارغة */
+  pointer-events: none;
+}
+
+/* --- TASK 3 & 5: Input Area Redesign --- */
+.input-bar {
+  width: 100%;
+  padding: 15px 16px 25px 16px; /* Padding adjustments */
+  background: linear-gradient(to top, var(--bg-primary) 20%, rgba(0,0,0,0)); 
+  backdrop-filter: blur(5px); /* إضافة ضبابية خفيفة لتمييزه عن الخلفية */
+  z-index: 100; /* Ensure above Welcome Screen */
+  box-sizing: border-box;
+  display: flex; justify-content: center;
+  pointer-events: auto;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 800px; /* Prevent too wide on desktop */
+}
+
+.input {
+  width: 100%; 
+  border-radius: 30px; /* Task 3: Fully Rounded */
+  padding: 16px 60px 16px 20px; /* Right padding for the button */
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary); 
+  color: var(--text-color);
+  font-size: 16px; font-family: inherit; resize: none; overflow-y: hidden;
+  line-height: 24px; max-height: 150px; box-sizing: border-box;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.input:focus { outline: none; border-color: #666; }
+
+/* Task 3: Floating Send Button inside Input */
+.send-btn {
+  position: absolute; 
+  right: 6px; top: 6px; /* Positioned inside */
+  width: 46px; height: 46px; 
+  border-radius: 50%; border: none;
+  background: var(--text-color); color: var(--bg-primary);
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s;
+  z-index: 101;
+}
+.send-btn:active { transform: scale(0.95); }
+
+/* --- Welcome Screen --- */
+#welcomeScreen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--bg-primary);
+    z-index: 50; /* Lower than Input Bar */
+    transition: opacity 0.3s;
+    pointer-events: none; 
+}
+#welcomeScreen > * { pointer-events: auto; }
+.welcome-logo { font-size: 50px; font-weight: bold; display: flex; align-items: center; margin-bottom: 10px; }
+.welcome-logo span { font-family: 'Courier New', monospace; font-size: 70px; font-weight: 900; margin-right: 5px; }
+.welcome-sub { font-size: 16px; opacity: 0.6; font-weight: normal; }
+.hidden { opacity: 0; pointer-events: none !important; }
+
+/* --- Messages --- */
+.messages {
+  flex: 1; overflow-y: auto; padding: 20px 20px 0 20px;
+  display: flex; flex-direction: column; gap: 20px;
+  position: relative;
+  pointer-events: auto;
+}
+
+.msg {
+  max-width: 90%; padding: 12px 16px; border-radius: 18px;
+  word-wrap: break-word; line-height: 1.6; font-size: 15px;
+  color: var(--text-color);
+}
+
+.msg.user {
+  margin-right: auto; margin-left: 0;
+  background: var(--bg-secondary);
+  border-bottom-left-radius: 4px;
+}
+
+/* Task 5: AI Transparent Background */
+.msg.ai {
+  margin-left: auto; margin-right: 0;
+  background: transparent; /* No Bubble */
+  border: none;
+  padding: 0 5px; /* Less padding */
+  width: 100%; 
+  max-width: 100%;
+}
+
+/* Task 5: Typing Cursor Effect */
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.typing-cursor {
+    display: inline-block;
+    color: var(--text-color);
+    font-weight: bold;
+    margin-left: 2px;
+    animation: blink 1s infinite;
+}
+
+/* Code Handling */
+.msg pre { 
+    background: #000; padding: 12px; border-radius: 8px; 
+    overflow-x: auto; margin: 10px 0; border: 1px solid #333; 
+}
+.msg code { font-family: 'Consolas', monospace; font-size: 13px; color: #e0e0e0; }
+
+.code-snippet-card {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--accent-color);
+  border-radius: 8px; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 10px 0; cursor: pointer;
+  transition: background 0.2s;
+}
+.code-snippet-card:hover { background: rgba(255,255,255,0.05); }
+
+/* --- Overlays (Task 4: High Z-Index) --- */
+#menuPanel {
+  position: fixed; left: -320px; top: 0; width: 300px; height: 100%;
+  background: var(--bg-header); 
+  padding: 80px 12px 40px 12px;
+  box-shadow: 2px 0 20px rgba(0,0,0,0.5);
+  transition: transform .3s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 3000; /* High z-index to cover button */
+  border-right: 1px solid var(--border-color);
+  display: flex; flex-direction: column;
+  box-sizing: border-box;
+}
+#menuPanel.open { transform: translateX(320px); }
+
+#convList { flex: 1; overflow-y: auto; margin-bottom: 10px; }
+#newChatBtn {
+  background: var(--bg-secondary); border: none; color: var(--text-color);
+  font-weight: bold; padding: 12px; cursor: pointer; margin-bottom: 20px;
+  width: 100%; border-radius: 8px;
+}
+#openSettings {
+    margin-top: auto; padding: 14px; border-radius: 8px;
+    background: var(--bg-secondary); color: var(--text-color); border: none; width: 100%;
+}
+
+/* Codezone */
+.codezone {
+  position: fixed; left: 100%; top: 0; width: 100%; height: 100%;
+  background: var(--bg-primary); transition: transform .32s ease;
+  z-index: 3500; /* Higher */
+  display: flex; flex-direction: column;
+}
+.codezone.open { transform: translateX(-100%); }
+.codearea {
+  flex: 1; padding: 15px; border: none; background: #050505; color: #e6eef8;
+  font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; line-height: 1.6; resize: none;
+}
+.codearea:focus { outline: none; }
+
+/* Settings */
+.settings-page {
+  position: fixed; left: 0; top: 0; right: 0; bottom: 0;
+  background: var(--bg-primary); padding: 20px;
+  display: none; flex-direction: column; z-index: 4000; /* Highest */
+}
+.settings-page.open { display: flex; }
+.setting-row-btn {
+  width: 100%; padding: 18px; margin-bottom: 10px; background: var(--bg-secondary);
+  border-radius: 12px; color: var(--text-color); border: none; text-align: left; cursor: pointer;
+}
+.popover-options {
+  position: absolute; top: 70px; left: 20px; background: var(--bg-header);
+  border: 1px solid var(--border-color); padding: 8px; border-radius: 12px;
+  display: none; flex-direction: column; z-index: 4010; min-width: 160px;
+}
+.popover-options.show { display: flex; }
+.option-item { padding: 10px; cursor: pointer; }
+
+/* Preview Overlay */
+.fullscreen-overlay {
+  background: #fff; 
+  z-index: 5000; /* Max */
+  display: none; 
+  flex-direction: column;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+}
+.fullscreen-overlay.active { display: flex; }
+.preview-header {
+  height: 56px; background: #f0f0f0; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 16px; color: #000; border-bottom: 1px solid #ccc;
+}
+
+/* Run Button */
+.run-fab {
+  position: absolute; bottom: 24px; right: 24px;
+  width: 60px; height: 60px; border-radius: 16px;
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6); cursor: pointer; 
+  display: flex; align-items: center; justify-content: center; z-index: 10;
+}
+.play-icon { width: 0; height: 0; border-left: 18px solid var(--text-color); border-top: 10px solid transparent; border-bottom: 10px solid transparent; margin-left: 4px; }
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  
+  <button id="menuBtn" class="menu-btn" aria-label="menu">☰</button>
+
+  <div id="welcomeScreen">
+      <div class="welcome-logo">
+          <span>&lt;</span>odeai
+      </div>
+      <div class="welcome-sub">What can I help you with?</div>
+  </div>
+
+  <div class="topbar">
+    <div id="topLogo" class="logo-container">
+        <span class="logo-symbol">&lt;</span>
+        <span class="logo-text-part">odeai</span>
+    </div>
+  </div>
+
+  <div id="menuPanel">
+    <button id="newChatBtn">New chat +</button>
+    <h3 style="margin:10px 0 5px 0; color:var(--text-color); opacity:0.6; font-size:12px; text-transform:uppercase">Conversations</h3>
+    <div id="convList"></div>
+    <button id="openSettings">Settings</button>
+  </div>
+
+  <div class="root">
+    <div id="messages" class="messages" aria-live="polite"></div>
+
+    <div class="input-bar">
+      <div class="input-wrapper">
+         <textarea id="input" class="input" placeholder="Type a message..." rows="1"></textarea>
+         <button id="sendBtn" class="send-btn" title="Send">⬆</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="codezone" class="codezone" aria-hidden="true">
+    <div style="height:56px;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg-header);border-bottom:1px solid var(--border-color)">
+      <div style="font-weight:bold">Project Code</div>
+      <button id="closeCodeBtn" class="settings-btn" style="font-size:14px; width:auto; padding:0 15px">Back</button>
+    </div>
+    <textarea id="codeArea" class="codearea">// Your project code will appear here...</textarea>
+    <button id="runFab" class="run-fab" title="Run Code">
+      <div class="play-icon"></div>
+    </button>
+  </div>
+
+  <div id="previewOverlay" class="fullscreen-overlay">
+    <div class="preview-header">
+      <span>Live Preview</span>
+      <button id="closePreviewMain" class="settings-btn" style="background:#ddd; color:#000; font-size:14px;width:auto;padding:0 15px;">Close</button>
+    </div>
+    <iframe id="previewFrame" style="flex:1;border:none;background:#fff"></iframe>
+  </div>
+
+  <div id="settingsPage" class="settings-page" aria-hidden="true">
+    <h2 style="margin-bottom:30px; margin-top:40px">Settings</h2>
+    <div style="position:relative;">
+        <button id="themeBtn" class="setting-row-btn">Theme</button>
+        <div id="themePopover" class="popover-options">
+            <div class="option-item" onclick="setTheme('dark')">Dark</div>
+            <div class="option-item" onclick="setTheme('light')">Light</div>
+        </div>
+    </div>
+    <div style="margin-top:auto; display:flex; justify-content:center; margin-bottom: 20px;">
+      <button id="closeSettings" style="padding:14px 40px; border-radius:30px; background:transparent; border:1px solid var(--border-color); color:var(--text-color); cursor:pointer">Close</button>
+    </div>
+  </div>
+
+<script>
+const RENDER_SERVER_URL = '';
+let convs = JSON.parse(localStorage.getItem('codeai_convs')||'[]');
+let activeId = null; 
+let isStreaming = false; // To track streaming state for the cursor
+
+const currentTheme = localStorage.getItem('codeai_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+const renderer = new marked.Renderer();
+renderer.code = function(code, language) {
+  const lineCount = code.split('\n').length;
+  if (lineCount > 6) {
+    return `</div><div class="code-snippet-card" onclick="document.getElementById('codezone').classList.add('open')">
+              <div style="display:flex;align-items:center">
+                 <span class="csc-icon">📄</span>
+                 <span class="csc-text">Code snippet attached (View in Codezone)</span>
+              </div>
+              <span style="font-size:18px;opacity:0.5">›</span>
+            </div><div>`; 
+  }
+  return `<pre><code>${code}</code></pre>`;
+};
+marked.setOptions({ renderer: renderer });
+
+const messagesEl = document.getElementById('messages');
+const codeArea = document.getElementById('codeArea');
+const inputEl = document.getElementById('input');
+const welcomeScreen = document.getElementById('welcomeScreen');
+const topLogo = document.getElementById('topLogo');
+
+function setTheme(mode) {
+    document.documentElement.setAttribute('data-theme', mode);
+    localStorage.setItem('codeai_theme', mode);
+    document.getElementById('themePopover').classList.remove('show');
+}
+document.getElementById('themeBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('themePopover').classList.toggle('show');
+});
+document.addEventListener('click', () => document.getElementById('themePopover').classList.remove('show'));
+
+function renderMessages(){
+  messagesEl.innerHTML = '';
+  
+  if(!activeId) {
+      welcomeScreen.classList.remove('hidden');
+      topLogo.style.opacity = '0';
+      return;
+  }
+
+  const conv = convs.find(c=>c.id===activeId);
+  if(!conv || conv.messages.length === 0) {
+      welcomeScreen.classList.remove('hidden');
+      topLogo.style.opacity = '0';
+  } else {
+      welcomeScreen.classList.add('hidden');
+      topLogo.style.opacity = '1';
+  }
+
+  if(conv) {
+      conv.messages.forEach((m, index) => {
+        const d = document.createElement('div');
+        d.className = 'msg ' + (m.role==='user'?'user':'ai');
+        if(m.role === 'user') {
+          d.textContent = m.text;
+        } else {
+          // Parse Markdown
+          let htmlContent = marked.parse(m.text);
+          
+          // Task 5: Add Cursor only to the last AI message IF streaming
+          if (isStreaming && index === conv.messages.length - 1) {
+              // Remove closing P tag to append cursor inline logically, then re-close (simplified approach)
+              htmlContent += '<span class="typing-cursor">&gt;</span>';
+          }
+          d.innerHTML = htmlContent;
+        }
+        messagesEl.appendChild(d);
+      });
+  }
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+  
+function saveState(){ localStorage.setItem('codeai_convs', JSON.stringify(convs)); }
+
+inputEl.addEventListener('input', function() {
+  this.style.height = 'auto';
+  if(this.scrollHeight > 150) {
+      this.style.height = '150px'; this.style.overflowY = 'auto';
+  } else {
+      this.style.height = (this.scrollHeight) + 'px'; this.style.overflowY = 'hidden';
+  }
+});
+
+async function sendMessage(text){
+  if(!text) return;
+  
+  welcomeScreen.classList.add('hidden');
+  topLogo.style.opacity = '1';
+  isAwaitingFirstChunk = true; 
+
+  if (!activeId) {
+      const newId = Date.now().toString();
+      const title = text.length > 30 ? text.substring(0, 30) + '...' : text;
+      convs.unshift({ id: newId, title: title, messages: [], code: '// Start coding...' });
+      activeId = newId;
+      renderConversations();
+  }
+
+  const conv = convs.find(c=>c.id===activeId);
+  conv.messages.push({role:'user', text});
+  saveState(); 
+  renderMessages();
+  
+  // Start Streaming State
+  isStreaming = true; 
+  // No loading indicator bubble needed, we will stream directly to a new blank message or buffer
+  conv.messages.push({role:'ai', text:''}); 
+  renderMessages();
+
+  try{
+    await fetch(RENDER_SERVER_URL + '/api/chat', { 
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:text, convId:activeId, code:conv.code||''})
+    });
+  }catch(err){
+    conv.messages[conv.messages.length-1].text = 'Offline or Server Error.';
+    isStreaming = false;
+    saveState(); renderMessages();
+  }
+}
+
+document.getElementById('sendBtn').addEventListener('click', ()=> {
+  const v = inputEl.value.trim();
+  if(!v) return;
+  inputEl.value=''; inputEl.style.height = 'auto';
+  sendMessage(v);
+});
+inputEl.addEventListener('keydown', e=> { 
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); document.getElementById('sendBtn').click(); }
+});
+
+// UI Logic
+const menuBtn = document.getElementById('menuBtn');
+const menuPanel = document.getElementById('menuPanel');
+
+menuBtn.addEventListener('click', ()=> {
+    const isOpen = menuPanel.classList.contains('open');
+    if(isOpen) {
+        menuPanel.classList.remove('open');
+        menuBtn.classList.remove('active');
+    } else {
+        menuPanel.classList.add('open');
+        menuBtn.classList.add('active');
+    }
+});
+
+document.getElementById('newChatBtn').addEventListener('click', () => {
+    activeId = null; 
+    document.getElementById('codeArea').value = '// start';
+    renderMessages();
+    menuPanel.classList.remove('open');
+    menuBtn.classList.remove('active');
+});
+
+document.getElementById('openSettings').addEventListener('click', ()=> {
+    document.getElementById('settingsPage').classList.add('open');
+    menuPanel.classList.remove('open');
+    menuBtn.classList.remove('active');
+});
+document.getElementById('closeSettings').addEventListener('click', ()=> document.getElementById('settingsPage').classList.remove('open'));
+
+const codezone = document.getElementById('codezone');
+let startX = 0;
+document.addEventListener('touchstart', e=> startX = e.touches[0].clientX, {passive:true});
+document.addEventListener('touchend', e=>{
+  const endX = (e.changedTouches[0] && e.changedTouches[0].clientX) || startX;
+  if(endX - startX < -80) codezone.classList.add('open');
+  if(endX - startX > 80) codezone.classList.remove('open');
+}, {passive:true});
+document.getElementById('closeCodeBtn').addEventListener('click', ()=> codezone.classList.remove('open'));
+
+// SSE & Logic
+let isAwaitingFirstChunk = true;
+if(typeof(EventSource) !== 'undefined'){
+  const sse = new EventSource(RENDER_SERVER_URL + '/api/events');
+  sse.onmessage = (e) => {
+    try {
+      const payload = JSON.parse(e.data);
+      if(payload.type === 'assistant_message'){
+        if(!activeId) return;
+        const conv = convs.find(c => c.id === activeId);
+        if (!conv) return;
+        
+        if(payload.text === '\n[STREAM COMPLETE]') {
+            isStreaming = false;
+            renderMessages(); // Removes cursor
+            return;
+        }
+
+        const lastMsg = conv.messages[conv.messages.length - 1];
+        if(lastMsg && lastMsg.role === 'ai') { 
+            lastMsg.text += payload.text; 
+        } 
+        
+        // Extract code
+        const codeMatch = lastMsg.text.match(/```(?:html|css|js|javascript|python)?\s*([\s\S]*?)```/g);
+        if (codeMatch) {
+             let latestCodeBlock = codeMatch[codeMatch.length -1];
+             let cleanCode = latestCodeBlock.replace(/```(?:html|css|js|javascript|python)?/g, '').replace(/```/g, '').trim();
+             if(cleanCode.split('\n').length > 5) {
+                 codeArea.value = cleanCode;
+                 conv.code = cleanCode;
+             }
+        }
+        saveState(); 
+        renderMessages(); // Re-render with cursor
+      }
+    } catch(err) { console.error(err); }
+  };
+}
+
+function renderConversations(){
+  const c = document.getElementById('convList');
+  c.innerHTML = '';
+  convs.forEach(cv=>{
+    const el = document.createElement('div'); 
+    el.style.padding='14px'; 
+    el.style.borderBottom='1px solid var(--border-color)';
+    el.style.cursor='pointer'; el.style.color = 'var(--text-color)';
+    el.textContent=cv.title;
+    el.addEventListener('click', ()=> { 
+        activeId = cv.id; 
+        document.getElementById('codeArea').value = cv.code || ''; 
+        renderMessages(); 
+        menuPanel.classList.remove('open'); 
+        menuBtn.classList.remove('active');
+    });
+    c.appendChild(el);
+  });
+}
+renderConversations(); 
+renderMessages(); 
+
+const runFab = document.getElementById('runFab');
+const previewOverlay = document.getElementById('previewOverlay');
+const closePreviewMain = document.getElementById('closePreviewMain');
+const previewFrame = document.getElementById('previewFrame');
+
+runFab.addEventListener('click', () => {
+  previewOverlay.classList.add('active');
+  const rawCode = document.getElementById('codeArea').value;
+  previewFrame.srcdoc = rawCode;
+});
+closePreviewMain.addEventListener('click', () => {
+  previewOverlay.classList.remove('active');
+  previewFrame.srcdoc = '';
+});
+</script>
+</body>
+</html>
