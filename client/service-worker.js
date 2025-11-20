@@ -1,4 +1,4 @@
-const CACHE_NAME = 'codeai-static-v1.02';
+const CACHE_NAME = 'codeai-static-v1.03';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/styles.css', '/app.js'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
