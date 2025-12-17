@@ -1,6 +1,8 @@
-const CACHE_NAME = 'codeai-static-v1.273.9';
+const CACHE_NAME = 'codeai-static-v1.274.0';
 const ASSETS = [
 '/',
+'/styles.css'
+'/app.js',
 '/index.html',
 '/manifest.json',
 '/icons/icon-192x192.png', 
