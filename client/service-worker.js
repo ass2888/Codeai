@@ -1,4 +1,4 @@
-const CACHE_NAME = 'codeai-static-v1.276.3';
+const CACHE_NAME = 'codeai-static-v1.276.4';
 const ASSETS = [
 '/',
 '/styles.css',
