@@ -1,4 +1,4 @@
-const APP_VERSION = 'v1.281.37'; // يمكنك تحديث هذا يدوياً عند كل تحديث للكاش
+const APP_VERSION = 'v1.281.38'; // يمكنك تحديث هذا يدوياً عند كل تحديث للكاش
 const versionEl = document.getElementById('appVersion');
 if(versionEl) {
     if (!localStorage.getItem('userId')) {
