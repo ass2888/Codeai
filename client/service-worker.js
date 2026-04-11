@@ -27,6 +27,8 @@ const ASSETS = [
 '/assets/undo-light.png',
 '/assets/splash-dark.mp4',
 '/assets/splash-light.mp4',
+'/assets/avatar-vid-dark.mp4',
+'/assets/avatar-vid-light.mp4',
 ];
 // 1. مرحلة التثبيت (Install)
 self.addEventListener('install', (e) => {
