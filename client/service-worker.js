@@ -29,6 +29,10 @@ const ASSETS = [
 '/assets/splash-light.mp4',
 '/assets/avatar-vid-dark.mp4',
 '/assets/avatar-vid-light.mp4',
+'/assets/backcard.png',
+'/assets/bird-pic.png',
+'/assets/doc-pic.png',
+'/assets/welcome-vid-1.mp4',
 ];
 // 1. مرحلة التثبيت (Install)
 self.addEventListener('install', (e) => {
