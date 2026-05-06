@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* متغيرات الثيم الداكن */
+        :root {
+            --bg: #080808;
+            --container-bg: #080808;
+            --text: #fff;
+            --secondary-text: #aaa;
+            --option-bg: #2a2a2a;
+            --option-border: #333;
+            --option-hover-bg: #3a3a3a;
+            --option-selected-bg: #2a2a2a;
+            --option-selected-border: #fff;
+            --btn-bg: #fff;
+            --btn-hover-bg: #e0e0e0;
+            --btn-text: #080808;
+            --progress-text: #888;
+            --result-bg: #152a16;
+            --result-score-color: #4caf50;
+            --result-message-color: #aaa;
+            --progress-bar-bg: #2a2a2a;
+            --progress-bar-fill: #fff;
+            --modal-bg: rgba(0,0,0,0.75);
+            --modal-content-bg: #1e1e1e;
+            --correct-color: #4caf50;
+            --wrong-color: #f44336;
+            --input-bg: #2a2a2a;
+            --difficulty-active-bg: #fff;
+            --difficulty-active-text: #080808;
+        }
+
+        body.light-mode {
+            --bg: #F7F7F7;
+            --container-bg: #F7F7F7;
+            --text: #080808;
+            --secondary-text: #555;
+            --option-bg: #F0F0F0;
+            --option-border: #F0F0F0;
+            --option-hover-bg: #dcdcdc;
+            --option-selected-bg: #F0F0F0;
+            --option-selected-border: #080808;
+            --btn-bg: #080808;
+            --btn-hover-bg: #090909;
+            --btn-text: #fff;
+            --progress-text: #666;
+            --result-bg: #e6f4e6;
+            --result-score-color: #2e7d32;
+            --result-message-color: #555;
+            --progress-bar-bg: #e0e0e0;
+            --progress-bar-fill: #080808;
+            --modal-bg: rgba(0,0,0,0.3);
+            --modal-content-bg: #ffffff;
+            --input-bg: #e8e8e8;
+            --difficulty-active-bg: #080808;
+            --difficulty-active-text: #fff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .quiz-app {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--container-bg);
+            transition: background 0.3s;
+        }
+
+        .quiz-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            background: transparent;
+            
+        }
+
+        .header-left h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .header-buttons { display: flex; gap: 0.5rem; align-items: center; }
+
+#themeToggle, #langToggle {
+    background: none; border: none; border-radius: 50px;
+    padding: 0.5rem 1.2rem; font-size: 1.4rem; cursor: pointer;
+    background: var(--option-bg); color: var(--text); transition: 0.2s;
+    display: flex; align-items: center; gap: 0.5rem; line-height: 1; font-weight: 500;
+    /* ✅ أضف هذه الخصائص */
+    width: 80px;
+    height: 44px;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#langToggle {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    width: 80px; /* ✅ نفس العرض */
+    height: 44px; /* ✅ نفس الارتفاع */
+    padding: 0; /* ✅ إزالة padding غير المتساوي */
+    flex-shrink: 0;
+}
+        #themeToggle:hover, #langToggle:hover { background: var(--option-hover-bg); }
+
+        .quiz-body {
+            flex: 1; padding: 2rem 5vw; display: flex; flex-direction: column;
+            max-width: 900px; margin: 0 auto; width: 100%; position: relative;
+        }
+
+        /* شريط التقدم */
+        .progress-section { margin-bottom: 2rem; width: 100%; }
+        .progress-bar {
+            width: calc(100% - 40px); height: 24px; background: var(--progress-bar-bg);
+            border-radius: 25px; margin: 8px auto; overflow: hidden; transition: background 0.3s;
+        }
+        .progress-bar-fill {
+            height: 100%; background: var(--progress-bar-fill); border-radius: 25px;
+            width: 0%; transition: width 0.4s ease, background 0.3s;
+            margin-left: auto;
+        }
+        .progress-fraction {
+            text-align: center; font-size: 0.9rem; color: var(--secondary-text);
+            margin-top: 4px; transition: color 0.3s;
+        }
+
+        .slide-container { flex: 1; overflow: hidden; position: relative; min-height: 200px; }
+        .question-slide { transition: transform 0.25s ease, opacity 0.25s ease; opacity: 1; }
+        .question-text { font-size: 1.5rem; font-weight: 500; margin-bottom: 2rem; line-height: 1.6; color: var(--text); }
+        .options { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 2rem; }
+
+        .option {
+            width: 100%; padding: 1.2rem 1.5rem; background: var(--option-bg);
+            border: none; border-radius: 14px; cursor: pointer;
+            transition: 0.2s; text-align: left; color: var(--text); font-size: 1rem; outline: none; position: relative;
+        }
+        .option:hover { background: var(--option-hover-bg); border-color: #777; }
+        .option.selected {
+            background: var(--option-selected-bg);
+            border: 2px solid var(--option-selected-border);
+            color: var(--option-selected-border); font-weight: 500;
+        }
+
+        /* المراجعة */
+        .review-mode .option { pointer-events: none; opacity: 0.9; }
+        .option.correct-answer { border-color: var(--correct-color) !important; box-shadow: 0 0 0 1px var(--correct-color); }
+        .option.wrong-selected { border-color: var(--wrong-color) !important; box-shadow: 0 0 0 1px var(--wrong-color); }
+        .option-explanation { font-size: 0.85rem; color: var(--secondary-text); margin-top: 0.5rem; line-height: 1.4; display: none; }
+        .review-mode .option-explanation { display: block; }
+
+        /* أزرار التنقل */
+        .nav-buttons { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; }
+        .btn {
+            background: var(--btn-bg); color: var(--btn-text); border: none; padding: 1rem 2rem;
+            border-radius: 40px; font-size: 1.1rem; cursor: pointer; transition: 0.2s; font-weight: 900;
+            flex: 1; min-width: 120px;
+        }
+        .btn:hover { background: var(--btn-hover-bg); transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn.prev-btn { background: transparent; border: 2px solid var(--option-border); color: var(--text); font-weight: 500; }
+        .btn.prev-btn:hover:not(:disabled) { background: var(--option-hover-bg); }
+
+        /* شاشة النتيجة الجديدة */
+        .result {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            padding: 2rem 1rem;
+            margin-bottom: 1.5rem;
+            background: transparent;
+            border-radius: 16px;
+            flex-wrap: wrap;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .result.show {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .result-left {
+            text-align: center;
+        }
+        .result-percentage {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1;
+        }
+        .result-fraction {
+            font-size: 1.4rem;
+            color: var(--secondary-text);
+            margin-top: 0.3rem;
+        }
+        .result-message {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--secondary-text);
+            text-align: center;
+            max-width: 300px;
+        }
+
+        /* أزرار ما بعد النتيجة */
+        .post-result-buttons {
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .post-result-buttons.show { display: flex; }
+        .post-result-buttons .btn-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .post-result-buttons .btn-group .btn { flex: 1; }
+        .restart-btn { width: 100%; }
+
+        /* مودال */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--modal-bg); display: none; justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(4px);
+            opacity: 0; transition: opacity 0.25s ease;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .modal-panel {
+            background: var(--modal-content-bg); border-radius: 20px; padding: 2rem;
+            max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transform: scale(0.9); transition: transform 0.25s ease;
+        }
+        .modal-overlay.show .modal-panel { transform: scale(1); }
+        .modal-panel h2 { margin-bottom: 1.5rem; }
+        .modal-label { display: block; margin-bottom: 0.5rem; color: var(--secondary-text); font-size: 0.9rem; }
+        .modal-input, .modal-textarea {
+            width: 100%; padding: 0.8rem 1.2rem; border-radius: 40px;
+            border: 1px solid var(--option-border); background: var(--input-bg); color: var(--text);
+            font-size: 1rem; margin-bottom: 1rem; outline: none; resize: vertical;
+        }
+        .modal-textarea { border-radius: 16px; min-height: 80px; }
+        .modal-buttons { display: flex; gap: 1rem; margin-top: 1rem; }
+
+        /* أزرار الصعوبة */
+        .difficulty-options { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .difficulty-btn {
+            flex: 1; padding: 0.8rem 1rem; border-radius: 40px; border: 1px solid var(--option-border);
+            background: var(--option-bg); color: var(--text); cursor: pointer; transition: 0.2s;
+            text-align: center; font-weight: 600; font-size: 0.95rem;
+        }
+        .difficulty-btn:hover { background: var(--option-hover-bg); }
+        .difficulty-btn.active {
+            background: var(--difficulty-active-bg); color: var(--difficulty-active-text);
+            border-color: var(--difficulty-active-bg);
+        }
+
+        .loading-spinner {
+            display: inline-block; width: 18px; height: 18px;
+            border: 2px solid var(--btn-text); border-top: 2px solid transparent;
+            border-radius: 50%; animation: spin 0.6s linear infinite;
+            margin-right: 8px; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 600px) {
+            .quiz-header { padding: 1rem; }
+            .header-left h1 { font-size: 1.3rem; }
+            .quiz-body { padding: 1.5rem 1rem; }
+            .question-text { font-size: 1.3rem; }
+            .btn { padding: 0.9rem 1.5rem; font-size: 1rem; }
+            .progress-bar { width: calc(100% - 20px); }
+            .result-percentage { font-size: 3.5rem; }
+            .result-message { font-size: 1.4rem; }
+        }
+#exitReviewBtn {
+    width: 100%;
+    max-width: 400px;
+    margin: 1rem auto 0;
+    display: none;
+    flex-shrink: 0;
+    /* ✅ أضف هذين السطرين */
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    padding: 0 2rem;
+    line-height: 1;
+}
+/* وزن خط عربي سميك للأزرار */
+
+.lang-ar .btn,
+.lang-ar .difficulty-btn {
+    font-weight: 900 !important; /* تأكيد التطبيق */
+}
+.lang-ar .btn.prev-btn {
+    font-weight: 900 !important;
+}
+.lang-ar #langToggle {
+    font-weight: 900 !important;
+}
+    </style>
+</head>
+<body>
+    <div class="quiz-app">
+        <header class="quiz-header">
+            <div class="header-left"><h1 id="appTitle">اختبار JavaScript</h1></div>
+            <div class="header-buttons">
+                <button id="langToggle" title="تغيير اللغة">English</button>
+                <button id="themeToggle" title="تبديل الثيم"><span>🌙</span></button>
+            </div>
+        </header>
+
+        <div class="quiz-body" id="quizBody">
+            <div class="progress-section" id="progressSection">
+                <div class="progress-bar"><div class="progress-bar-fill" id="progressBarFill"></div></div>
+                <div class="progress-fraction" id="progressFraction"></div>
+            </div>
+
+            <!-- شاشة النتيجة الجديدة -->
+            <div class="result" id="resultBox">
+                <div class="result-left">
+                    <span class="result-percentage" id="resultPercentage"></span>
+                    <div class="result-fraction" id="resultFraction"></div>
+                </div>
+                <div class="result-message" id="resultMessage"></div>
+            </div>
+
+            <div class="slide-container">
+                <div class="question-slide" id="questionSlide">
+                    <h2 class="question-text" id="questionText"></h2>
+                    <div class="options" id="optionsContainer"></div>
+                </div>
+            </div>
+
+            <div class="nav-buttons" id="navButtons">
+                <button class="btn" id="nextBtn" onclick="handleNext()">التالي</button>
+                <button class="btn prev-btn" id="prevBtn" onclick="handlePrev()" disabled>السابق</button>
+            </div>
+
+            <!-- أزرار ما بعد النتيجة -->
+            <div class="post-result-buttons" id="postResultButtons">
+                <div class="btn-group">
+                    <button class="btn" id="reviewBtn" onclick="startReview()">مراجعة الإجابات</button>
+                    <button class="btn" id="extraBtn" onclick="openExtraQuestionsModal()">أسئلة إضافية</button>
+                </div>
+                <button class="btn restart-btn" id="restartBtn" onclick="restartQuiz()">إعادة الاختبار</button>
+            </div>
+
+            <button class="btn" id="exitReviewBtn" onclick="exitReview()" style="display:none; margin-top:1rem;">الخروج من المراجعة</button>
+        </div>
+
+        <!-- مودال الأسئلة الإضافية -->
+        <div class="modal-overlay" id="extraModalOverlay">
+            <div class="modal-panel">
+                <h2 id="extraTitle">أسئلة إضافية</h2>
+                <label class="modal-label" for="extraCount">عدد الأسئلة</label>
+                <input type="number" class="modal-input" id="extraCount" min="1" max="20" value="3">
+
+                <label class="modal-label">مستوى الصعوبة</label>
+                <div class="difficulty-options" id="difficultyOptions">
+                    <button class="difficulty-btn active" data-value="same">مماثلة</button>
+                    <button class="difficulty-btn" data-value="harder">أصعب</button>
+                    <button class="difficulty-btn" data-value="easier">أسهل</button>
+                </div>
+
+                <label class="modal-label" for="extraInstructions">تعليمات إضافية (اختياري)</label>
+                <textarea class="modal-textarea" id="extraInstructions"></textarea>
+
+                <div class="modal-buttons">
+                    <button class="btn" id="generateExtraBtn" onclick="generateExtraQuestions()">توليد</button>
+                    <button class="btn prev-btn" onclick="closeExtraModal()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== بيانات الاختبار ====================
+        let quizData = __QUIZ_DATA__;
+
+        let currentTopic = quizData.title;
+        const translations = {
+            ar: {
+                appTitle: () => quizData.title, langToggle: "English",
+                progressFraction: (cur, tot) => `${cur} / ${tot}`,
+                next: "التالي", finish: "إنهاء", prev: "السابق", restart: "إعادة الاختبار",
+                reviewAnswers: "مراجعة الإجابات", extraQuestions: "أسئلة إضافية",
+                resultMessage: "أحسنت! هذه نتيجتك:",
+                scoreMessages: { 100: "👑 ممتاز! إجابة كاملة!", 80: "🔥 جيد جداً!", 60: "👍 لا بأس، واصل التعلّم!", 0: "📚 تحتاج مراجعة أكثر، استمر!" },
+                exitReview: "الخروج من المراجعة", extraTitle: "أسئلة إضافية",
+                countLabel: "عدد الأسئلة", difficultyLabel: "مستوى الصعوبة",
+                instructionsLabel: "تعليمات إضافية (اختياري)",
+                same: "مماثلة", harder: "أصعب", easier: "أسهل",
+                generate: "توليد", cancel: "إلغاء", generating: "جاري التوليد..."
+            },
+            en: {
+                appTitle: () => quizData.title, langToggle: "العربية",
+                progressFraction: (cur, tot) => `${cur} / ${tot}`,
+                next: "Next", finish: "Finish", prev: "Previous", restart: "Restart Quiz",
+                reviewAnswers: "Review Answers", extraQuestions: "Extra Questions",
+                resultMessage: "Well done! Here is your result:",
+                scoreMessages: { 100: "👑 Perfect score!", 80: "🔥 Very good!", 60: "👍 Not bad, keep learning!", 0: "📚 Needs more review, keep going!" },
+                exitReview: "Exit Review", extraTitle: "Extra Questions",
+                countLabel: "Number of questions", difficultyLabel: "Difficulty",
+                instructionsLabel: "Additional instructions (optional)",
+                same: "Same", harder: "Harder", easier: "Easier",
+                generate: "Generate", cancel: "Cancel", generating: "Generating..."
+            }
+        };
+
+        let current = 0, userAnswers = new Array(quizData.questions.length).fill(null), currentLang = 'ar', isAnimating = false, reviewMode = false;
+        let selectedDifficulty = 'same';
+
+        // عناصر الواجهة
+        const themeToggle = document.getElementById('themeToggle'), langToggle = document.getElementById('langToggle');
+        const progressBarFill = document.getElementById('progressBarFill'), progressFraction = document.getElementById('progressFraction');
+        const progressSection = document.getElementById('progressSection'), questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer'), nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn'), navButtons = document.getElementById('navButtons');
+        const resultBox = document.getElementById('resultBox'), resultPercentage = document.getElementById('resultPercentage');
+        const resultFraction = document.getElementById('resultFraction'), resultMessage = document.getElementById('resultMessage');
+        const postResultButtons = document.getElementById('postResultButtons');
+        const restartBtn = document.getElementById('restartBtn'), appTitle = document.getElementById('appTitle');
+        const questionSlide = document.getElementById('questionSlide'), reviewBtn = document.getElementById('reviewBtn');
+        const extraBtn = document.getElementById('extraBtn'), exitReviewBtn = document.getElementById('exitReviewBtn');
+        const quizBody = document.getElementById('quizBody');
+        const extraModalOverlay = document.getElementById('extraModalOverlay'), extraCountInput = document.getElementById('extraCount');
+        const extraInstructionsTextarea = document.getElementById('extraInstructions'), generateExtraBtn = document.getElementById('generateExtraBtn');
+        const difficultyOptions = document.getElementById('difficultyOptions');
+
+        // ==================== دوال الترجمة ====================
+        function getTranslation(key) {
+            const val = translations[currentLang]?.[key];
+            return typeof val === 'function' ? val() : (val ?? key);
+        }
+        function applyLanguage() {
+            appTitle.textContent = getTranslation('appTitle');
+            langToggle.textContent = getTranslation('langToggle');
+            if (resultBox.classList.contains('show')) updateResultTexts();
+            else { updateButtonLabels(); updateProgressDisplay(); }
+            document.getElementById('extraTitle').textContent = getTranslation('extraTitle');
+            document.querySelector('.modal-label[for="extraCount"]').textContent = getTranslation('countLabel');
+            document.querySelector('.modal-panel .modal-label:nth-of-type(2)').textContent = getTranslation('difficultyLabel');
+            document.querySelector('.modal-label[for="extraInstructions"]').textContent = getTranslation('instructionsLabel');
+            document.querySelectorAll('.difficulty-btn[data-value="same"]').forEach(b => b.textContent = getTranslation('same'));
+            document.querySelectorAll('.difficulty-btn[data-value="harder"]').forEach(b => b.textContent = getTranslation('harder'));
+            document.querySelectorAll('.difficulty-btn[data-value="easier"]').forEach(b => b.textContent = getTranslation('easier'));
+            generateExtraBtn.textContent = getTranslation('generate');
+            exitReviewBtn.textContent = getTranslation('exitReview');
+            document.documentElement.lang = currentLang;
+               document.documentElement.classList.remove('lang-ar', 'lang-en');
+    document.documentElement.classList.add(currentLang === 'ar' ? 'lang-ar' : 'lang-en');
+        }
+        function updateButtonLabels() {
+            nextBtn.textContent = (current === quizData.questions.length - 1) ? getTranslation('finish') : getTranslation('next');
+            prevBtn.textContent = getTranslation('prev');
+        }
+        function updateResultTexts() {
+            reviewBtn.textContent = getTranslation('reviewAnswers');
+            extraBtn.textContent = getTranslation('extraQuestions');
+            restartBtn.textContent = getTranslation('restart');
+        }
+
+        // ==================== شريط التقدم ====================
+        function updateProgressDisplay() {
+            if (resultBox.classList.contains('show')) return;
+            const total = quizData.questions.length, percent = ((current + 1) / total) * 100;
+            progressBarFill.style.width = percent + '%';
+            const fracFunc = translations[currentLang]?.progressFraction;
+            progressFraction.textContent = typeof fracFunc === 'function' ? fracFunc(current + 1, total) : `${current + 1} / ${total}`;
+        }
+
+        // ==================== الثيم ====================
+        function applyTheme() {
+            const saved = localStorage.getItem('quizTheme');
+            if (saved === 'light') { document.body.classList.add('light-mode'); themeToggle.innerHTML = '<span>☀️</span>'; }
+            else { document.body.classList.remove('light-mode'); themeToggle.innerHTML = '<span>🌙</span>'; }
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            themeToggle.innerHTML = isLight ? '<span>☀️</span>' : '<span>🌙</span>';
+            localStorage.setItem('quizTheme', isLight ? 'light' : 'dark');
+        });
+        langToggle.addEventListener('click', () => {
+            currentLang = (currentLang === 'ar') ? 'en' : 'ar';
+            localStorage.setItem('quizLang', currentLang);
+            applyLanguage();
+        });
+
+        // ==================== تحريك الانزلاق ====================
+        function animateTransition(direction, callback) {
+            if (isAnimating) return;
+            isAnimating = true;
+            const slide = questionSlide, offset = direction === 'next' ? 100 : -100;
+            slide.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+            slide.style.transform = `translateX(${offset}%)`; slide.style.opacity = '0';
+            const onTransitionEnd = () => {
+                slide.removeEventListener('transitionend', onTransitionEnd);
+                slide.style.transition = 'none'; slide.style.transform = `translateX(${-offset}%)`; slide.style.opacity = '1';
+                callback();
+                void slide.offsetWidth;
+                slide.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+                slide.style.transform = 'translateX(0)'; slide.style.opacity = '1';
+                const onFinish = () => { slide.removeEventListener('transitionend', onFinish); isAnimating = false; };
+                slide.addEventListener('transitionend', onFinish);
+            };
+            slide.addEventListener('transitionend', onTransitionEnd);
+        }
+
+        // ==================== تحميل الأسئلة ====================
+        function loadQuestion(index, direction = null) {
+            if (index >= quizData.questions.length) { if (reviewMode) exitReview(); else showResult(); return; }
+            const updateContent = () => {
+                const q = quizData.questions[index];
+                questionText.textContent = `${index + 1}. ${q.question}`;
+                optionsContainer.innerHTML = '';
+                q.options.forEach((opt, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option';
+                    btn.textContent = opt;
+                    const exp = document.createElement('div');
+                    exp.className = 'option-explanation';
+                    if (q.explanation && i === q.correct) exp.textContent = q.explanation;
+                    btn.appendChild(exp);
+                    btn.onclick = reviewMode ? null : () => selectOption(i);
+                    if (reviewMode) {
+                        btn.style.pointerEvents = 'none';
+                        if (i === q.correct) btn.classList.add('correct-answer');
+                        if (userAnswers[index] === i && i !== q.correct) btn.classList.add('wrong-selected');
+                    }
+                    optionsContainer.appendChild(btn);
+                });
+                const prev = userAnswers[index];
+                if (prev !== null && prev !== undefined) {
+                    const all = document.querySelectorAll('.option');
+                    if (all[prev]) all[prev].classList.add('selected');
+                }
+                prevBtn.disabled = (index === 0);
+                nextBtn.disabled = false;
+                updateButtonLabels();
+                if (reviewMode) {
+                    resultBox.classList.remove('show'); postResultButtons.classList.remove('show');
+                    navButtons.style.display = 'flex'; progressSection.style.display = 'block';
+                    exitReviewBtn.style.display = 'block'; quizBody.classList.add('review-mode');
+                } else {
+                    resultBox.classList.remove('show'); postResultButtons.classList.remove('show');
+                    navButtons.style.display = 'flex'; progressSection.style.display = 'block';
+                    exitReviewBtn.style.display = 'none'; quizBody.classList.remove('review-mode');
+                }
+                updateProgressDisplay();
+            };
+            if (direction && !isAnimating) animateTransition(direction, updateContent);
+            else {
+                questionSlide.style.transition = 'none'; questionSlide.style.transform = 'translateX(0)'; questionSlide.style.opacity = '1';
+                updateContent(); isAnimating = false;
+            }
+        }
+
+        function selectOption(idx) {
+            if (reviewMode) return;
+            document.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+            const all = document.querySelectorAll('.option');
+            if (all[idx]) all[idx].classList.add('selected');
+            userAnswers[current] = idx;
+        }
+
+        function handleNext() {
+            if (isAnimating) return;
+            if (current === quizData.questions.length - 1) { if (reviewMode) exitReview(); else showResult(); }
+            else { current++; loadQuestion(current, 'next'); }
+        }
+        function handlePrev() { if (isAnimating || current === 0) return; current--; loadQuestion(current, 'prev'); }
+
+        // ==================== شاشة النتيجة ====================
+        function showResult() {
+            progressSection.style.display = 'none';
+            questionText.textContent = ''; optionsContainer.innerHTML = '';
+            navButtons.style.display = 'none';
+            exitReviewBtn.style.display = 'none';
+            quizBody.classList.remove('review-mode'); reviewMode = false;
+
+            let score = 0;
+            for (let i = 0; i < quizData.questions.length; i++) if (userAnswers[i] === quizData.questions[i].correct) score++;
+            const percentage = Math.round((score / quizData.questions.length) * 100);
+
+            resultPercentage.textContent = percentage + '%';
+            resultFraction.textContent = `${score} / ${quizData.questions.length}`;
+            const msgs = getTranslation('scoreMessages');
+            let msg = '';
+            if (percentage === 100) msg = msgs[100]; else if (percentage >= 80) msg = msgs[80];
+            else if (percentage >= 60) msg = msgs[60]; else msg = msgs[0];
+            resultMessage.textContent = msg;
+
+            resultBox.classList.add('show');
+            postResultButtons.classList.add('show');
+            document.getElementById('restartBtn').style.display = 'block'; // نستخدم زر إعادة الاختبار الموجود في postResultButtons
+            
+            updateResultTexts();
+        }
+
+        function restartQuiz() {
+            current = 0; userAnswers = new Array(quizData.questions.length).fill(null); reviewMode = false;
+            quizBody.classList.remove('review-mode');
+            questionSlide.style.transition = 'none'; questionSlide.style.transform = 'translateX(0)'; questionSlide.style.opacity = '1';
+            resultBox.classList.remove('show'); postResultButtons.classList.remove('show');
+            loadQuestion(0);
+        }
+
+        function startReview() {
+            if (quizData.questions.length === 0) return;
+            reviewMode = true; current = 0;
+            resultBox.classList.remove('show'); postResultButtons.classList.remove('show');
+            navButtons.style.display = 'flex'; progressSection.style.display = 'block';
+            exitReviewBtn.style.display = 'block'; quizBody.classList.add('review-mode');
+            loadQuestion(0);
+        }
+        function exitReview() { reviewMode = false; quizBody.classList.remove('review-mode'); showResult(); }
+
+        // ==================== المودالات ====================
+        function openModal(overlay) {
+            overlay.style.display = 'flex';
+            requestAnimationFrame(() => { overlay.classList.add('show'); });
+        }
+        function closeModal(overlay) {
+            overlay.classList.remove('show');
+            setTimeout(() => { overlay.style.display = 'none'; }, 250);
+        }
+
+        // أسئلة إضافية
+        function openExtraQuestionsModal() {
+            extraCountInput.value = 3; extraInstructionsTextarea.value = '';
+            selectedDifficulty = 'same';
+            document.querySelectorAll('#difficultyOptions .difficulty-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('#difficultyOptions .difficulty-btn[data-value="same"]').classList.add('active');
+            openModal(extraModalOverlay);
+        }
+        function closeExtraModal() { closeModal(extraModalOverlay); }
+        extraModalOverlay.addEventListener('click', e => { if (e.target === extraModalOverlay) closeExtraModal(); });
+
+        // اختيار الصعوبة
+        difficultyOptions.addEventListener('click', (e) => {
+            const btn = e.target.closest('.difficulty-btn');
+            if (!btn) return;
+            document.querySelectorAll('#difficultyOptions .difficulty-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedDifficulty = btn.dataset.value;
+        });
+
+        async function generateExtraQuestions() {
+            const count = parseInt(extraCountInput.value) || 3;
+            const instructions = extraInstructionsTextarea.value.trim();
+            generateExtraBtn.disabled = true;
+            generateExtraBtn.innerHTML = `<span class="loading-spinner"></span> ${getTranslation('generating')}`;
+            try {
+                const res = await fetch('/api/quiz/extend', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        topic: currentTopic, existingQuestions: quizData.questions.map(q => q.question),
+                        count, difficulty: selectedDifficulty, instructions, lang: currentLang
+                    })
+                });
+                if (!res.ok) throw new Error('Server error');
+                const data = await res.json();
+                if (data.questions?.length) {
+                    quizData = quizData.concat(data.questions);
+                    userAnswers = new Array(quizData.questions.length).fill(null);
+                    closeExtraModal(); restartQuiz();
+                } else alert('فشل إنشاء الأسئلة الإضافية.');
+            } catch (err) { console.error(err); alert('فشل الاتصال بالخادم.'); }
+            finally { generateExtraBtn.disabled = false; generateExtraBtn.textContent = getTranslation('generate'); }
+        }
+
+        // ==================== بدء التطبيق ====================
+        function init() {
+            const savedLang = localStorage.getItem('quizLang'); currentLang = (savedLang === 'en') ? 'en' : 'ar';
+            document.documentElement.classList.add(currentLang === 'ar' ? 'lang-ar' : 'lang-en');
+            applyTheme(); applyLanguage();
+            document.documentElement.lang = currentLang;
+            loadQuestion(0);
+        }
+        init();
+    </script>
+</body>
+</html>
