@@ -22,7 +22,7 @@
     "docx": "^8.5.0",
     "pptxgenjs": "^3.12.0",
     "pdf-to-img": "^4.0.0",
-    "@supabase/supabase-js": "^2.0.0",
+    "@supabase/supabase-js": "^2.39.0",
     "jsonwebtoken": "^9.x.x",
     "pdf-parse": "^1.1.1",
     "mammoth": "^1.4.2",
